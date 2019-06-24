@@ -1,8 +1,10 @@
 import tkinter as tk
 from random import choice
 
-# changed solution display to Message window
-# Modified colors and quote unquote graphics
+# TO-DO
+# add wrong_count variable
+# Create Draw_Hangman method
+# connect wrong_count variable to Draw_Hangman via Check_Letter
 
 class Game(tk.Tk):
 	def __init__(self, *args, **kwargs):
@@ -15,7 +17,6 @@ class Game(tk.Tk):
 		self.word = choice(self.word_list)
 		self.word_display = " ".join(self.word)
 		self.obscured_display = str("_ "*len(self.word))[:-1]
-		# self.answer_key = {}
 	def Create_Canvas(self, *args, **kwargs): # Canvas for drawing hangman
 		canvas = tk.Canvas(self.canvas_container, width=500, height=500, bg="skyblue1")
 		canvas.grid(column=1, row=1, columnspan=10)
@@ -34,11 +35,10 @@ class Game(tk.Tk):
 		self.button_container.grid(row=7, column=1, rowspan=3, columnspan=10)
 		self.button_container.grid_rowconfigure(0, weight=1)
 		self.button_container.grid_columnconfigure(0, weight=1)
-	def Create_Letter_Buttons(self, *args, **kwargs):  # should probably create button class and give buttons names, attributes
+	def Create_Letter_Buttons(self, *args, **kwargs):
 		current_row = 8
 		current_column = 1
 		count = 0
-		# Create dictionary in init, add 
 		for letter in self.letter_list:
 			letter_button = tk.Button(self.button_container, text=letter, command = lambda letter=letter : self.Check_Letter(letter)) # THIS TOOK ME FOREVER TO FIGURE OUT - without specifying "letter=letter" WITHIN lambda, it would always call last assignment after loop completion
 			letter_button.grid(row = current_row, column = current_column, padx=2, pady=2, ipadx=5, sticky="NESW")
@@ -59,11 +59,24 @@ class Game(tk.Tk):
 
 	def Check_Letter(self, letter, *args, **kwargs):
 		if letter in self.word:
-			self.display_message.set("You matched a letter!"+" "+letter)
+			i = 0
+			while i < len(self.word):
+				if self.word[i] == letter:
+					obscured_list = self.obscured_display.split(" ")
+					obscured_list[i] = letter
+					self.obscured_display = " ".join(obscured_list)
+				i+=1
+			self.Update_Solution_Display()
+			self.Check_For_Win()
 		else:
-			self.display_message.set(letter)
+			pass
 	def Update_Solution_Display(self, *args, **kwargs):
-		pass
+		self.display_message.set(self.obscured_display)
+	def Check_For_Win(self, *args, **kwargs):
+		if "_" not in self.obscured_display:
+			self.display_message.set("You won!")
+		else:
+			pass
 	def Update_Test_Display(self, btn_text, *args, **kwargs): # DELETE ME, for testing code in GUI
 		lorem_ipsum = "Your button worked!"
 		btn_text.set(self.word_display+self.obscured_display)
