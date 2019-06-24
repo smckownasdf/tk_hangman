@@ -2,9 +2,17 @@ import tkinter as tk
 from random import choice
 
 # TO-DO
-# add wrong_count variable
-# Create Draw_Hangman method
-# connect wrong_count variable to Draw_Hangman via Check_Letter
+# fill out Draw_Hangman method with visual cues
+# create Free_Hangman method to draw happy, saved hangman on win
+# convert test button to reset button
+# add try / except and error testing
+# Organize sections of code based on functionality for clarity & maybe add better comments
+
+# DONE (this commit)
+# added wrong_count variable & display within tk.Message window
+# created (largely empty) Draw_Hangman method
+# gave letter buttons full functionality
+
 
 class Game(tk.Tk):
 	def __init__(self, *args, **kwargs):
@@ -17,6 +25,7 @@ class Game(tk.Tk):
 		self.word = choice(self.word_list)
 		self.word_display = " ".join(self.word)
 		self.obscured_display = str("_ "*len(self.word))[:-1]
+		self.wrong_count = 1
 	def Create_Canvas(self, *args, **kwargs): # Canvas for drawing hangman
 		canvas = tk.Canvas(self.canvas_container, width=500, height=500, bg="skyblue1")
 		canvas.grid(column=1, row=1, columnspan=10)
@@ -51,9 +60,9 @@ class Game(tk.Tk):
 	def Create_Solution_Display(self, *args, **kwargs):
 		self.display_message = tk.StringVar()
 
-		solution_display = tk.Message(self.button_container, textvariable=self.display_message)
+		solution_display = tk.Message(self.button_container, aspect=1000, textvariable=self.display_message)
 		solution_display.grid(row=7, column=1, columnspan=10)
-		solution_display.config(bg="lightblue", font=('helvetica', 20), pady=20, padx=50, width=3000, relief="ridge")
+		solution_display.config(bg="lightblue", font=('helvetica', 20), pady=20, padx=50, relief="ridge")
 		
 		self.display_message.set(self.obscured_display)
 
@@ -68,8 +77,29 @@ class Game(tk.Tk):
 				i+=1
 			self.Update_Solution_Display()
 			self.Check_For_Win()
+		elif self.wrong_count < 5:
+			self.Wrong_Answer(self.wrong_count)
+			self.Draw_Hangman(self.wrong_count)
+			self.wrong_count += 1
 		else:
+			self.Draw_Hangman(self.wrong_count)
+			self.display_message.set("YOU LOSE!\nCorrect Answer:\n"+self.word_display)
+	def Wrong_Answer(self, wrong_count, *args, **kwargs):
+		self.display_message.set(str(self.wrong_count)+" WRONG.")
+		self.after(1000, self.Update_Solution_Display)
+	def Draw_Hangman(self, wrong_count, *args, **kwargs):
+		if self.wrong_count == 1:
 			pass
+		elif self.wrong_count == 2:
+			pass
+		elif self.wrong_count == 3:
+			pass
+		elif self.wrong_count == 4:
+			pass
+		elif self.wrong_count == 5:
+			pass
+		else:
+			self.display_message.set("wrong_count variable error in Display_Hangman")
 	def Update_Solution_Display(self, *args, **kwargs):
 		self.display_message.set(self.obscured_display)
 	def Check_For_Win(self, *args, **kwargs):
