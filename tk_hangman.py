@@ -2,6 +2,7 @@ import tkinter as tk
 from random import choice
 
 # TO-DO
+# prevent rapid input so that everything can execute properly in this awful single-threaded thing
 # fill out Draw_Hangman method with visual cues
 # create Free_Hangman method to draw happy, saved hangman on win
 # convert test button to reset button
@@ -9,9 +10,9 @@ from random import choice
 # Organize sections of code based on functionality for clarity & maybe add better comments
 
 # DONE (this commit)
-# added wrong_count variable & display within tk.Message window
-# created (largely empty) Draw_Hangman method
-# gave letter buttons full functionality
+# added more detail to gallows background under create canvas
+# filled out Draw_Hangman method to display visuals
+# *Known bug* Check_Letter method takes time to call Draw_Hangman, etc. - rapid input leads to missed animation
 
 
 class Game(tk.Tk):
@@ -20,6 +21,7 @@ class Game(tk.Tk):
 		self.main_container = tk.Frame(self)
 		self.canvas_container = tk.Frame(self)
 		self.button_container = tk.Frame(self, bg="pale goldenrod")
+		self.canvas = None
 		self.letter_list = [letter for letter in "abcdefghijklmnopqrstuvwxyz"]
 		self.word_list = ["pencil", "basket", "syzygy"]
 		self.word = choice(self.word_list)
@@ -27,13 +29,16 @@ class Game(tk.Tk):
 		self.obscured_display = str("_ "*len(self.word))[:-1]
 		self.wrong_count = 1
 	def Create_Canvas(self, *args, **kwargs): # Canvas for drawing hangman
-		canvas = tk.Canvas(self.canvas_container, width=500, height=500, bg="skyblue1")
-		canvas.grid(column=1, row=1, columnspan=10)
-		canvas.create_polygon(0, 375, 500, 375, 500, 500, 0, 500, fill="forest green", tags="setting")
-		canvas.create_line(300, 410, 500, 410, tags="setting", width=5)
-		canvas.create_line(400, 410, 400, 25, tags="setting", width=5)
-		canvas.create_line(400, 25, 250, 25, tags="setting", width=5)
-		canvas.create_line(250, 25, 250, 75, tags="setting", width=5)
+		self.canvas = tk.Canvas(self.canvas_container, width=500, height=500, bg="skyblue1")
+		self.canvas.grid(column=1, row=1, columnspan=10)
+		self.canvas.create_polygon(0, 375, 500, 375, 500, 500, 0, 500, fill="forest green", tags="setting")
+		self.canvas.create_line(300, 410, 500, 410, tags="setting", width=5) # gallows base
+		self.canvas.create_line(400, 410, 400, 25, tags="setting", width=5) # gallows vertical support beam
+		self.canvas.create_line(400, 25, 250, 25, tags="setting", width=5) # gallows horizontal overhead beam
+		self.canvas.create_oval(245, 25, 255, 35, tags="setting", width=2) # gallows rope loop
+		self.canvas.create_line(250, 35, 250, 75, fill="goldenrod", tags="setting", width=5) # gallows noose line
+		self.canvas.create_line(250, 75, 250, 125, fill="goldenrod", tags="setting", width=10) # gallows noose knot
+		self.canvas.create_oval(235, 125, 265, 165, outline="goldenrod", tags="setting", width=5) # gallows noose loop
 	def Create_Main_Container(self, *args, **kwargs): # primary field / container for whole game display
 		self.main_container.grid(rowspan=10, columnspan=10)
 		self.main_container.grid_rowconfigure(0, weight=1) 
@@ -78,26 +83,38 @@ class Game(tk.Tk):
 			self.Update_Solution_Display()
 			self.Check_For_Win()
 		elif self.wrong_count < 5:
-			self.Wrong_Answer(self.wrong_count)
 			self.Draw_Hangman(self.wrong_count)
-			self.wrong_count += 1
+			self.Wrong_Answer(self.wrong_count)
+			self.after(1000, self.Increase_Wrong_Count)
 		else:
 			self.Draw_Hangman(self.wrong_count)
 			self.display_message.set("YOU LOSE!\nCorrect Answer:\n"+self.word_display)
+	def Increase_Wrong_Count(self, *args, **kwargs):
+		self.wrong_count += 1
 	def Wrong_Answer(self, wrong_count, *args, **kwargs):
 		self.display_message.set(str(self.wrong_count)+" WRONG.")
-		self.after(1000, self.Update_Solution_Display)
+		self.after(1000, self.Update_Solution_Display) # more familiar time.sleep doesn't play nicely with tkinter; this is rough equivalent
 	def Draw_Hangman(self, wrong_count, *args, **kwargs):
 		if self.wrong_count == 1:
-			pass
+			self.canvas.create_oval(220,102, 280, 162, fill="blanched almond", tags="hangman")
 		elif self.wrong_count == 2:
-			pass
+			self.canvas.create_polygon(220,250, 220,200, 210,210, 190,200, 215,168, 285,168, 310,200, 290,210, 280,200, 280,250, fill="red4") # Shirt (torso) - center numbers are top of shirt
 		elif self.wrong_count == 3:
-			pass
+			self.canvas.create_polygon(235,352, 210,350, 220,250, 280,250, 290,350, 265,352, 250,290, fill="navy") # pants (legs) - center numbers are top of pants
 		elif self.wrong_count == 4:
-			pass
-		elif self.wrong_count == 5:
-			pass
+			self.canvas.create_line(200,205, 195,215, width=7) # (our) left arm upper
+			self.canvas.create_line(193,213, 220,220, width=7) # left arm lower
+			self.canvas.create_line(300,205, 305,215, width=7) # right arm upper
+			self.canvas.create_line(307,213, 279,220, width=7) # right arm lower
+			self.canvas.create_polygon(265,352, 290,350, 310,352, 312,368, 267,368) # right shoe, drawn from top-left of shoe
+			self.canvas.create_polygon(235,352, 210,350, 190,352, 188,368, 232,368) # left shoe, drawn from top-right of shoe
+		elif self.wrong_count == 5: # face / game over
+			self.canvas.create_line(235,130, 240,135, width=2) # (our) right eye pt1
+			self.canvas.create_line(235,135, 240,130, width=2) # right eye pt2
+			self.canvas.create_line(265,130, 260,135, width=2) # left eye pt1
+			self.canvas.create_line(265,135, 260,130, width=2) # left eye pt2
+			self.canvas.create_arc(235,145, 265,155, extent=180, style="arc", width=2) # frown
+			self.canvas.create_arc(250,140, 255,155, extent=-180, style="arc", fill="tomato2", outline="tomato3")
 		else:
 			self.display_message.set("wrong_count variable error in Display_Hangman")
 	def Update_Solution_Display(self, *args, **kwargs):
