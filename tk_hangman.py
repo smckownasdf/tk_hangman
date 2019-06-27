@@ -3,52 +3,47 @@ from random import choice
 from sys import exit
 
 # TO-DO
-# prevent rapid input so that everything can execute properly, although this seems to be a pipe dream as far as I can tell
-# create Free_Hangman method to draw happy, saved hangman on win
-# add try / except and error testing
-# maybe add better comments so I don't hate myself when I look at this next
+# prevent rapid input so that everything can execute properly (possibly asyncio? figure out how to make it work with tkinter, possibly as coroutine)
+# maybe add better comments
 
 # DONE (this commit)
-# Created section headers to help organize code better
-# Unb[ou]nd keyboard letter keys in both Disable_Buttons and Check_Letter methods
-# Refactored Create_Letter_Buttons into self and Bind_Buttons
-# Added "hangman" tags to all hangman animations
-# Created Remove_Hangman, Start_Displays, Enable_Buttons, Reset_Variables, and Reset_Game methods
-# Refactored __init__ word creation assignments into Choose_Word method
-# Converted test button to reset button and finished game loop
-# Created Enable_Reset_Button, Disable_Reset_Button methods and made reset button only available upon game win / loss
-# Grabs larger (235970) word list from external file (https://svnweb.freebsd.org/base/head/share/dict/web2)
-# Connected sys.exit and used bind to close app with escape key
-# added sun, clouds, lines to indicate slipknot, and mountains
-# Created second display for messages rather than single display
-# Created Draw_Free_Hangman method to show free, happy hangman
+# Created several try / except / finally error handling in Create_Word_List and a few other places. Probably should have done this from the outset.
+# Finally remembered to close the file in Create_Word_List
+# Set "hangman" tag on neck so it doesn't leave a mysterious square in the sky if you win and play again
+# Moved Created_Reset_Button method to Creation Methods section for easier readability
 
 
 
 class Game(tk.Tk):
 	def __init__(self, *args, **kwargs):
 		tk.Tk.__init__(self, *args, **kwargs)  # initialize Tkinter while you're at it
+		# TKinter Frames / Containers
 		self.main_container = tk.Frame(self)
 		self.canvas_container = tk.Frame(self)
 		self.button_container = tk.Frame(self, bg="pale goldenrod")
+		# UI variables for broad scope of accessibility
 		self.canvas = None
+		self.reset_button = None
+		self.display_message = tk.StringVar()
+		self.solution_display_message = tk.StringVar()
+		self.buttons = []
+		# Gameplay variables
 		self.letter_list = [letter for letter in "abcdefghijklmnopqrstuvwxyz"]
-		self.word_list = ["pencil", "basket", "syzygy"]
+		self.word_list = None
+		self.backup_word_list = ["pencil", "basket", "syzygy", "porcupine", "crawfish", "banana", "tumbleweed", "python", "gerrymander"]
 		self.word = None
 		self.word_display = None
 		self.obscured_display = None
 		self.wrong_count = 1
-		self.buttons = []
-		self.reset_button = None
-		self.display_message = tk.StringVar()
-		self.solution_display_message = tk.StringVar()
 		self.bind('<Escape>', self.Close)
 # -------------------------------------------------------------------------------------------
 # Creation Methods
 # -------------------------------------------------------------------------------------------
-	def Create_Canvas(self, *args, **kwargs): # Canvas for drawing hangman
+	def Create_Canvas(self, *args, **kwargs): 
+		# Create canvas widget for drawing hangman
 		self.canvas = tk.Canvas(self.canvas_container, width=500, height=500, bg="skyblue1")
 		self.canvas.grid(column=1, row=1, columnspan=10)
+		# Draw background elements
 		self.Draw_Ground()
 		self.Draw_Sun()
 		self.Draw_Clouds()
@@ -139,37 +134,52 @@ class Game(tk.Tk):
 
 	def Bind_Buttons(self, *args, **kwargs):
 		# I hate using index numbers instead of names, but why use a dictionary just to make this look nicer?
-		self.bind("a", lambda event: self.Check_Letter(self.buttons[0])) 
-		self.bind("b", lambda event: self.Check_Letter(self.buttons[1]))
-		self.bind("c", lambda event: self.Check_Letter(self.buttons[2]))
-		self.bind("d", lambda event: self.Check_Letter(self.buttons[3]))
-		self.bind("e", lambda event: self.Check_Letter(self.buttons[4]))
-		self.bind("f", lambda event: self.Check_Letter(self.buttons[5]))
-		self.bind("g", lambda event: self.Check_Letter(self.buttons[6]))
-		self.bind("h", lambda event: self.Check_Letter(self.buttons[7]))
-		self.bind("i", lambda event: self.Check_Letter(self.buttons[8]))
-		self.bind("j", lambda event: self.Check_Letter(self.buttons[9]))
-		self.bind("k", lambda event: self.Check_Letter(self.buttons[10]))
-		self.bind("l", lambda event: self.Check_Letter(self.buttons[11]))
-		self.bind("m", lambda event: self.Check_Letter(self.buttons[12]))
-		self.bind("n", lambda event: self.Check_Letter(self.buttons[13]))
-		self.bind("o", lambda event: self.Check_Letter(self.buttons[14]))
-		self.bind("p", lambda event: self.Check_Letter(self.buttons[15]))
-		self.bind("q", lambda event: self.Check_Letter(self.buttons[16]))
-		self.bind("r", lambda event: self.Check_Letter(self.buttons[17]))
-		self.bind("s", lambda event: self.Check_Letter(self.buttons[18]))
-		self.bind("t", lambda event: self.Check_Letter(self.buttons[19]))
-		self.bind("u", lambda event: self.Check_Letter(self.buttons[20]))
-		self.bind("v", lambda event: self.Check_Letter(self.buttons[21]))
-		self.bind("w", lambda event: self.Check_Letter(self.buttons[22]))
-		self.bind("x", lambda event: self.Check_Letter(self.buttons[23]))
-		self.bind("y", lambda event: self.Check_Letter(self.buttons[24]))
-		self.bind("z", lambda event: self.Check_Letter(self.buttons[25]))
+		try:
+			self.bind("a", lambda event: self.Check_Letter(self.buttons[0])) 
+			self.bind("b", lambda event: self.Check_Letter(self.buttons[1]))
+			self.bind("c", lambda event: self.Check_Letter(self.buttons[2]))
+			self.bind("d", lambda event: self.Check_Letter(self.buttons[3]))
+			self.bind("e", lambda event: self.Check_Letter(self.buttons[4]))
+			self.bind("f", lambda event: self.Check_Letter(self.buttons[5]))
+			self.bind("g", lambda event: self.Check_Letter(self.buttons[6]))
+			self.bind("h", lambda event: self.Check_Letter(self.buttons[7]))
+			self.bind("i", lambda event: self.Check_Letter(self.buttons[8]))
+			self.bind("j", lambda event: self.Check_Letter(self.buttons[9]))
+			self.bind("k", lambda event: self.Check_Letter(self.buttons[10]))
+			self.bind("l", lambda event: self.Check_Letter(self.buttons[11]))
+			self.bind("m", lambda event: self.Check_Letter(self.buttons[12]))
+			self.bind("n", lambda event: self.Check_Letter(self.buttons[13]))
+			self.bind("o", lambda event: self.Check_Letter(self.buttons[14]))
+			self.bind("p", lambda event: self.Check_Letter(self.buttons[15]))
+			self.bind("q", lambda event: self.Check_Letter(self.buttons[16]))
+			self.bind("r", lambda event: self.Check_Letter(self.buttons[17]))
+			self.bind("s", lambda event: self.Check_Letter(self.buttons[18]))
+			self.bind("t", lambda event: self.Check_Letter(self.buttons[19]))
+			self.bind("u", lambda event: self.Check_Letter(self.buttons[20]))
+			self.bind("v", lambda event: self.Check_Letter(self.buttons[21]))
+			self.bind("w", lambda event: self.Check_Letter(self.buttons[22]))
+			self.bind("x", lambda event: self.Check_Letter(self.buttons[23]))
+			self.bind("y", lambda event: self.Check_Letter(self.buttons[24]))
+			self.bind("z", lambda event: self.Check_Letter(self.buttons[25]))
+		except IndexError as err:
+			print("Buttons list variable is missing an index, 0 to 25")
+			print("Playing with no or limited keyboard input for letters")
+			print("Error: ", err)
 
 	def Create_Word_List(self, *args, **kwargs):
 		# Thank you, https://svnweb.freebsd.org/base/head/share/dict/web2 for this file
-		with open('words') as file:
-		    self.word_list = [word.lower() for line in file for word in line.split()]
+		try:
+			with open('words') as file:
+			    self.word_list = [word.lower() for line in file for word in line.split()]
+			file.close()
+		except IOError as err:
+			print("Word list file is missing or cannot be opened. Game > Create_Word_List")
+			print("Error:", err)
+			print("Instead we are using a pre-built, smaller word list.")
+			self.word_list = self.backup_word_list
+			raise err
+		finally:
+			file.close()
 
 	def Make_Game(self, *args, **kwargs):
 		self.Create_Main_Container()
@@ -178,6 +188,7 @@ class Game(tk.Tk):
 		self.Create_Button_Container()
 		self.Create_Word_List()
 		self.Choose_Word()
+		self.Reset_Variables()
 		self.Create_Letter_Buttons()
 		self.Create_Reset_Button()
 		self.Create_Displays()
@@ -185,10 +196,17 @@ class Game(tk.Tk):
 	def Start_Displays(self, *args, **kwargs):
 		self.solution_display_message.set(self.obscured_display)
 		self.display_message.set("Welcome to TK Hangman!")
+
+	def Create_Reset_Button(self, *args, **kwargs):
+		btn_text = "RESET GAME"
+		self.reset_button = tk.Button(self.button_container, text=btn_text, command=self.Reset_Game)
+		self.reset_button.grid(row=11, column=8, columnspan=3, padx=2, pady=2, ipadx=5, sticky="NESW")
+		self.Disable_Reset_Button()
+
 # -------------------------------------------------------------------------------------------
 # Gameplay Methods
 # -------------------------------------------------------------------------------------------
-	def Check_Letter(self, button, event=None, *args, **kwargs): # event=None is for key binding. Explanation: https://stackoverflow.com/questions/13326940/python-tkinter-how-to-bind-key-to-a-button
+	def Check_Letter(self, button, event=None, *args, **kwargs): # event=None is for key binding from Bind_Buttons.
 		button.config(state="disabled")
 		letter = button.cget("text")
 		self.unbind(letter)
@@ -226,12 +244,15 @@ class Game(tk.Tk):
 		self.solution_display_message.set(self.obscured_display)
 
 	def Update_Message_Display(self, *args, **kwargs):
-		if self.wrong_count < 3:
-			self.display_message.set(f"{str(5-self.wrong_count)} guesses remaining!")
-		elif self.wrong_count < 4:
-			self.display_message.set(f"Only {str(5-self.wrong_count)} guesses left!")
-		else:
-			self.display_message.set("One guess left! Make it count!")
+		try:
+			if self.wrong_count < 3:
+				self.display_message.set(f"{str(5-self.wrong_count)} guesses remaining!")
+			elif self.wrong_count < 4:
+				self.display_message.set(f"Only {str(5-self.wrong_count)} guesses left!")
+			else:
+				self.display_message.set("One guess left! Make it count!")
+		except:
+			print("Display message update failed: Update_Message_Display")
 
 	def Check_For_Win(self, *args, **kwargs):
 		if "_" not in self.obscured_display:
@@ -242,12 +263,6 @@ class Game(tk.Tk):
 			self.Draw_Free_Hangman()
 		else:
 			pass
-
-	def Create_Reset_Button(self, *args, **kwargs): # DELETE ME, for testing code in GUI
-		btn_text = "RESET GAME"
-		self.reset_button = tk.Button(self.button_container, text=btn_text, command=self.Reset_Game)
-		self.reset_button.grid(row=11, column=8, columnspan=3, padx=2, pady=2, ipadx=5, sticky="NESW")
-		self.Disable_Reset_Button()
 
 	def Enable_Reset_Button(self, *args, **kwargs):
 		self.bind("<Return>", self.Reset_Game)
@@ -313,31 +328,37 @@ class Game(tk.Tk):
 		self.canvas.create_polygon()
 
 	def Draw_Hangman(self, wrong_count, *args, **kwargs):
-		if self.wrong_count == 1:
-			self.canvas.create_oval(220,102, 280, 162, fill="blanched almond", tags="hangman")
-		elif self.wrong_count == 2:
-			self.canvas.create_polygon(220,250, 220,200, 210,210, 190,200, 215,168, 285,168, 310,200, 290,210, 280,200, 280,250, fill="red4", tags="hangman") # Shirt (torso) - center numbers are top of shirt
-		elif self.wrong_count == 3:
-			self.canvas.create_polygon(235,352, 210,350, 220,250, 280,250, 290,350, 265,352, 250,290, fill="navy", tags="hangman") # pants (legs) - center numbers are top of pants
-		elif self.wrong_count == 4:
-			self.canvas.create_line(200,205, 195,215, width=7, tags="hangman") # (our) left arm upper
-			self.canvas.create_line(193,213, 220,220, width=7, tags="hangman") # left arm lower
-			self.canvas.create_line(300,205, 305,215, width=7, tags="hangman") # right arm upper
-			self.canvas.create_line(307,213, 279,220, width=7, tags="hangman") # right arm lower
-			self.canvas.create_polygon(265,352, 290,350, 310,352, 312,368, 267,368, tags="hangman") # right shoe, drawn from top-left of shoe
-			self.canvas.create_polygon(235,352, 210,350, 190,352, 188,368, 232,368, tags="hangman") # left shoe, drawn from top-right of shoe
-		elif self.wrong_count == 5: # face / game over
-			self.canvas.create_line(235,130, 240,135, width=2, tags="hangman") # (our) right eye pt1
-			self.canvas.create_line(235,135, 240,130, width=2, tags="hangman") # right eye pt2
-			self.canvas.create_line(265,130, 260,135, width=2, tags="hangman") # left eye pt1
-			self.canvas.create_line(265,135, 260,130, width=2, tags="hangman") # left eye pt2
-			self.canvas.create_arc(235,145, 265,155, extent=180, style="arc", width=2, tags="hangman") # frown
-			self.canvas.create_arc(250,140, 255,155, extent=-180, style="arc", fill="tomato2", outline="tomato3", tags="hangman") # tongue
-		else:
-			self.display_message.set("wrong_count variable error in Display_Hangman")
+		try:
+			if self.wrong_count == 1:
+				self.canvas.create_oval(220,102, 280, 162, fill="blanched almond", tags="hangman")
+			elif self.wrong_count == 2:
+				self.canvas.create_polygon(220,250, 220,200, 210,210, 190,200, 215,168, 285,168, 310,200, 290,210, 280,200, 280,250, fill="red4", tags="hangman") # Shirt (torso) - center numbers are top of shirt
+			elif self.wrong_count == 3:
+				self.canvas.create_polygon(235,352, 210,350, 220,250, 280,250, 290,350, 265,352, 250,290, fill="navy", tags="hangman") # pants (legs) - center numbers are top of pants
+			elif self.wrong_count == 4:
+				self.canvas.create_line(200,205, 195,215, width=7, tags="hangman") # (our) left arm upper
+				self.canvas.create_line(193,213, 220,220, width=7, tags="hangman") # left arm lower
+				self.canvas.create_line(300,205, 305,215, width=7, tags="hangman") # right arm upper
+				self.canvas.create_line(307,213, 279,220, width=7, tags="hangman") # right arm lower
+				self.canvas.create_polygon(265,352, 290,350, 310,352, 312,368, 267,368, tags="hangman") # right shoe, drawn from top-left of shoe
+				self.canvas.create_polygon(235,352, 210,350, 190,352, 188,368, 232,368, tags="hangman") # left shoe, drawn from top-right of shoe
+			elif self.wrong_count >= 5: # face / game over
+				self.canvas.create_line(235,130, 240,135, width=2, tags="hangman") # (our) right eye pt1
+				self.canvas.create_line(235,135, 240,130, width=2, tags="hangman") # right eye pt2
+				self.canvas.create_line(265,130, 260,135, width=2, tags="hangman") # left eye pt1
+				self.canvas.create_line(265,135, 260,130, width=2, tags="hangman") # left eye pt2
+				self.canvas.create_arc(235,145, 265,155, extent=180, style="arc", width=2, tags="hangman") # frown
+				self.canvas.create_arc(250,140, 255,155, extent=-180, style="arc", fill="tomato2", outline="tomato3", tags="hangman") # tongue
+			else:
+				self.display_message.set("wrong_count variable outside of expected range")
+				# This probably doesn't need a try/except given I've handled all valueerror issues in the if
+		except (ValueError) as err:
+			print("wrong_count variable outside of expected range")
+			print("Error: ", err)
+			raise err
 
 	def Draw_Free_Hangman(self, *args, **kwargs):
-		self.canvas.create_polygon(155,220, 145,220, 145,210, 155,210, fill="blanched almond") # neck
+		self.canvas.create_polygon(155,220, 145,220, 145,210, 155,210, fill="blanched almond", tags="hangman") # neck
 		self.canvas.create_oval(120,152, 180,212, fill="blanched almond", tags="hangman") # head
 		self.canvas.create_oval(135,175, 143,180, tags="hangman") # (our) left eye
 		self.canvas.create_oval(138,177, 140,179, fill="black", tags="hangman") # left pupil
@@ -380,8 +401,8 @@ class Game(tk.Tk):
 
 	def Reset_Game(self, *args, **kwargs):
 		self.Remove_Hangman()
-		self.Reset_Variables()
 		self.Choose_Word()
+		self.Reset_Variables()
 		self.Restart_Displays()
 		self.Enable_Buttons()
 		self.Disable_Reset_Button()

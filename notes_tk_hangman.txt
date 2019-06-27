@@ -1,1 +1,13 @@
-# Attempt to use the Python3 Tkinter library as a GUI framework for a functional hangman game
+﻿# Attempt to use the Python3 Tkinter library as a GUI framework for a functional hangman game
+
+Throughout this project, I reinforced existing Python3 knowledge and learned quite a bit about TKinter through help of the tcl/Tk documentation and examples on various resources and forums, most notably TutorialsPoint.com and (of course) StackOverflow.
+
+Most notable of the new things I learned:
+- Properly binding key events (and events in general) to a method using a lambda expression (Example: Game(tk.Tk) > Bind_Buttons and Check_Letter)
+https://stackoverflow.com/questions/13326940/python-tkinter-how-to-bind-key-to-a-button
+- Initializing tkinter within the init method of your primary object class (Example: Game(tk.TK) > __init__) Thanks to sentdex on YouTube - I was watching to see examples of classful structure and see if I was using the __init__ method somewhat properly, and found that method of initializing TKinter fascinating.
+- Using tk.Message() as opposed to doing similar work with tk.Label()
+- Using cget() to retrieve attributes from TKinter widgets
+- Using .after() instead of importing time.sleep()
+- Using unbind() to disable input
+- An introduction to different means of achieving concurrency within Python3, even if I ran into issues while attempting to use Thread.threading() with TKinter
