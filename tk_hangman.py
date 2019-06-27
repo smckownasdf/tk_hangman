@@ -3,13 +3,16 @@ from random import choice
 from sys import exit
 
 # TO-DO
-# prevent rapid input so that everything can execute properly (possibly asyncio? figure out how to make it work with tkinter, possibly as coroutine)
+# prevent rapid input so that hangman will always appear properly (possibly asyncio? figure out how to make it work with tkinter, possibly as coroutine)
 # maybe add better comments
+# maybe make resizable
 
 # DONE (this commit)
-# Replaced words file with official scrabble player's dictionary (ospd.txt)
-# Fixed UnboundLocalError that occurred when file.close() was placed in finally and initial error catch conditions were met
-
+# Removed unused Draw_Mountains method
+# Removed unnecessarily inherited variables from Wrong_Answer and Draw_Hangman methods
+# Attempted to resolve hangman not appearing issue by animating him beforehand and toggling state between hidden and normal
+# That did not work, and created an odd bug where I could no longer delete him based on the "hangman" tag
+# Resolved that new issue by toggling him back to hidden instead of reverting back
 
 class Game(tk.Tk):
   def __init__(self, *args, **kwargs):
@@ -46,6 +49,7 @@ class Game(tk.Tk):
     self.Draw_Clouds()
     self.Draw_Gallows()
     self.Draw_Rope()
+    self.Draw_Hidden_Hangman()
 
   def Create_Main_Container(self, *args, **kwargs): # primary field / container for whole game display
     self.main_container.grid(rowspan=10, columnspan=10)
@@ -215,21 +219,19 @@ class Game(tk.Tk):
       self.Update_Solution_Display()
       self.Check_For_Win()
     elif self.wrong_count < 5:
-      self.Draw_Hangman(self.wrong_count)
-      self.Wrong_Answer(self.wrong_count)
+      self.Draw_Hangman()
+      self.Wrong_Answer()
       self.after(1000, self.Increase_Wrong_Count)
     else:
-      self.Draw_Hangman(self.wrong_count)
+      self.Draw_Hangman()
       self.display_message.set("Correct Answer: "+self.word_display)
       self.Disable_Buttons()
       self.Enable_Reset_Button()
-      self.bind("<Return>", self.Reset_Game)
-
 
   def Increase_Wrong_Count(self, *args, **kwargs):
     self.wrong_count += 1
 
-  def Wrong_Answer(self, wrong_count, *args, **kwargs):
+  def Wrong_Answer(self, *args, **kwargs):
     self.display_message.set(str(self.wrong_count)+" WRONG.")
     self.after(1000, self.Update_Solution_Display) # more familiar time.sleep doesn't play nicely with tkinter; this is rough equivalent
     self.after(1000, self.Update_Message_Display)
@@ -247,6 +249,26 @@ class Game(tk.Tk):
         self.display_message.set("One guess left! Make it count!")
     except:
       print("Display message update failed: Update_Message_Display")
+
+  def Draw_Hangman(self, *args, **kwargs):
+    try:
+      if self.wrong_count == 1:
+        self.canvas.itemconfig("head", state="normal")
+      elif self.wrong_count == 2:
+        self.canvas.itemconfig("torso", state="normal")
+      elif self.wrong_count == 3:
+        self.canvas.itemconfig("pants", state="normal")
+      elif self.wrong_count == 4:
+        self.canvas.itemconfig("limbs", state="normal")
+      elif self.wrong_count >= 5: # face / game over
+        self.canvas.itemconfig("face", state="normal")
+      else:
+        self.display_message.set("wrong_count variable outside of expected range")
+        # This probably doesn't need a try/except given I've handled all valueerror issues in the if
+    except (ValueError) as err:
+      print("wrong_count variable outside of expected range")
+      print("Error: ", err)
+      raise err
 
   def Check_For_Win(self, *args, **kwargs):
     if "_" not in self.obscured_display:
@@ -318,57 +340,42 @@ class Game(tk.Tk):
     self.canvas.create_oval(20, 140, 80, 150, fill="white", outline="white", tags="setting") # cloud (right)
     self.canvas.create_oval(80, 130, 160, 150, fill="white", outline="white", tags="setting") # cloud (right)
 
-  def Draw_Mountains(self, *args, **kwargs):
-    self.canvas.create_polygon()
-
-  def Draw_Hangman(self, wrong_count, *args, **kwargs):
-    try:
-      if self.wrong_count == 1:
-        self.canvas.create_oval(220,102, 280, 162, fill="blanched almond", tags="hangman")
-      elif self.wrong_count == 2:
-        self.canvas.create_polygon(220,250, 220,200, 210,210, 190,200, 215,168, 285,168, 310,200, 290,210, 280,200, 280,250, fill="red4", tags="hangman") # Shirt (torso) - center numbers are top of shirt
-      elif self.wrong_count == 3:
-        self.canvas.create_polygon(235,352, 210,350, 220,250, 280,250, 290,350, 265,352, 250,290, fill="navy", tags="hangman") # pants (legs) - center numbers are top of pants
-      elif self.wrong_count == 4:
-        self.canvas.create_line(200,205, 195,215, width=7, tags="hangman") # (our) left arm upper
-        self.canvas.create_line(193,213, 220,220, width=7, tags="hangman") # left arm lower
-        self.canvas.create_line(300,205, 305,215, width=7, tags="hangman") # right arm upper
-        self.canvas.create_line(307,213, 279,220, width=7, tags="hangman") # right arm lower
-        self.canvas.create_polygon(265,352, 290,350, 310,352, 312,368, 267,368, tags="hangman") # right shoe, drawn from top-left of shoe
-        self.canvas.create_polygon(235,352, 210,350, 190,352, 188,368, 232,368, tags="hangman") # left shoe, drawn from top-right of shoe
-      elif self.wrong_count >= 5: # face / game over
-        self.canvas.create_line(235,130, 240,135, width=2, tags="hangman") # (our) right eye pt1
-        self.canvas.create_line(235,135, 240,130, width=2, tags="hangman") # right eye pt2
-        self.canvas.create_line(265,130, 260,135, width=2, tags="hangman") # left eye pt1
-        self.canvas.create_line(265,135, 260,130, width=2, tags="hangman") # left eye pt2
-        self.canvas.create_arc(235,145, 265,155, extent=180, style="arc", width=2, tags="hangman") # frown
-        self.canvas.create_arc(250,140, 255,155, extent=-180, style="arc", fill="tomato2", outline="tomato3", tags="hangman") # tongue
-      else:
-        self.display_message.set("wrong_count variable outside of expected range")
-        # This probably doesn't need a try/except given I've handled all valueerror issues in the if
-    except (ValueError) as err:
-      print("wrong_count variable outside of expected range")
-      print("Error: ", err)
-      raise err
+  def Draw_Hidden_Hangman(self, *args, **kwargs):
+    self.canvas.create_oval(220,102, 280, 162, fill="blanched almond", tags="hangman, head", state="hidden") # Draw Head
+    self.canvas.create_polygon(220,250, 220,200, 210,210, 190,200, 215,168, 285,168, 310,200, 290,210, 280,200, 280,250, fill="red4", tags="hangman, torso", state="hidden") # Shirt (torso) - top of shirt is center coords (215,168 to 285,168)
+    self.canvas.create_polygon(235,352, 210,350, 220,250, 280,250, 290,350, 265,352, 250,290, fill="navy", tags="hangman, pants", state="hidden") # pants (legs) - center coords are top of pants
+    self.canvas.create_line(200,205, 195,215, width=7, tags="hangman, limbs", state="hidden") # (our) left arm upper
+    self.canvas.create_line(193,213, 220,220, width=7, tags="hangman, limbs", state="hidden") # left arm lower
+    self.canvas.create_line(300,205, 305,215, width=7, tags="hangman, limbs", state="hidden") # right arm upper
+    self.canvas.create_line(307,213, 279,220, width=7, tags="hangman, limbs", state="hidden") # right arm lower
+    self.canvas.create_polygon(265,352, 290,350, 310,352, 312,368, 267,368, tags="hangman, limbs", state="hidden") # right shoe, drawn from top-left of shoe
+    self.canvas.create_polygon(235,352, 210,350, 190,352, 188,368, 232,368, tags="hangman, limbs", state="hidden") # left shoe, drawn from top-right of shoe
+    self.canvas.create_line(235,130, 240,135, width=2, tags="hangman, face", state="hidden") # (our) right eye pt1
+    self.canvas.create_line(235,135, 240,130, width=2, tags="hangman, face", state="hidden") # right eye pt2
+    self.canvas.create_line(265,130, 260,135, width=2, tags="hangman, face", state="hidden") # left eye pt1
+    self.canvas.create_line(265,135, 260,130, width=2, tags="hangman, face", state="hidden") # left eye pt2
+    self.canvas.create_arc(235,145, 265,155, extent=180, style="arc", width=2, tags="hangman, face", state="hidden") # frown
+    self.canvas.create_arc(250,140, 255,155, extent=-180, style="arc", fill="tomato2", outline="tomato3", tags="hangman, face", state="hidden") # tongue
 
   def Draw_Free_Hangman(self, *args, **kwargs):
-    self.canvas.create_polygon(155,220, 145,220, 145,210, 155,210, fill="blanched almond", tags="hangman") # neck
-    self.canvas.create_oval(120,152, 180,212, fill="blanched almond", tags="hangman") # head
-    self.canvas.create_oval(135,175, 143,180, tags="hangman") # (our) left eye
-    self.canvas.create_oval(138,177, 140,179, fill="black", tags="hangman") # left pupil
-    self.canvas.create_oval(157,175, 165,180, tags="hangman") # right eye
-    self.canvas.create_oval(160,177, 162,179, fill="black", tags="hangman") # right pupil
-    self.canvas.create_line(150,180, 147,187, tags="hangman") # nose
-    self.canvas.create_line(147,187, 151,187, tags="hangman") # nose
-    self.canvas.create_arc(165,185, 135,200, style="arc", extent=-160, width=2, tags="hangman") # smile
-    self.canvas.create_polygon(120,300, 120,250, 110,260, 90,250, 115,218, 185,218, 210,250, 190,260, 180,250, 180,300, fill="red4", tags="hangman") # torso
-    self.canvas.create_polygon(135,402, 110,400, 120,300, 180,300, 190,400, 165,402, 150,340, fill="navy", tags="hangman") # pants
-    self.canvas.create_line(100,255, 95,265, width=7, tags="hangman") # (our) left arm upper
-    self.canvas.create_line(93,263, 65,240, width=7, tags="hangman") # left arm lower
-    self.canvas.create_line(200,255, 205,265, width=7, tags="hangman") # right arm upper
-    self.canvas.create_line(207,263, 179,270, width=7, tags="hangman") # right arm lower
-    self.canvas.create_polygon(165,402, 190,400, 210,402, 212,418, 167,418, tags="hangman") # right shoe, drawn from top-left of shoe
-    self.canvas.create_polygon(135,402, 110,400, 90,402, 88,418, 132,418, tags="hangman") # left shoe, drawn from top-right of shoe
+    self.canvas.create_polygon(155,220, 145,220, 145,210, 155,210, fill="blanched almond", tags="freehangman") # neck
+    self.canvas.create_oval(120,152, 180,212, fill="blanched almond", tags="freehangman") # head
+    self.canvas.create_oval(135,175, 143,180, tags="freehangman") # (our) left eye
+    self.canvas.create_oval(138,177, 140,179, fill="black", tags="freehangman") # left pupil
+    self.canvas.create_oval(157,175, 165,180, tags="freehangman") # right eye
+    self.canvas.create_oval(160,177, 162,179, fill="black", tags="freehangman") # right pupil
+    self.canvas.create_line(150,180, 147,187, tags="freehangman") # nose
+    self.canvas.create_line(147,187, 151,187, tags="freehangman") # nose
+    self.canvas.create_arc(165,185, 135,200, style="arc", extent=-160, width=2, tags="freehangman") # smile
+    self.canvas.create_polygon(120,300, 120,250, 110,260, 90,250, 115,218, 185,218, 210,250, 190,260, 180,250, 180,300, fill="red4", tags="freehangman") # torso
+    self.canvas.create_polygon(135,402, 110,400, 120,300, 180,300, 190,400, 165,402, 150,340, fill="navy", tags="freehangman") # pants
+    self.canvas.create_line(100,255, 95,265, width=7, tags="freehangman") # (our) left arm upper
+    self.canvas.create_line(93,263, 65,240, width=7, tags="freehangman") # left arm lower
+    self.canvas.create_line(200,255, 205,265, width=7, tags="freehangman") # right arm upper
+    self.canvas.create_line(207,263, 179,270, width=7, tags="freehangman") # right arm lower
+    self.canvas.create_polygon(165,402, 190,400, 210,402, 212,418, 167,418, tags="freehangman") # right shoe, drawn from top-left of shoe
+    self.canvas.create_polygon(135,402, 110,400, 90,402, 88,418, 132,418, tags="freehangman") # left shoe, drawn from top-right of shoe
+
 # -------------------------------------------------------------------------------------------
 # Reset Methods
 # -------------------------------------------------------------------------------------------
@@ -378,7 +385,13 @@ class Game(tk.Tk):
     self.obscured_display = str("_ "*len(self.word))[:-1]
 
   def Remove_Hangman(self, *args, **kwargs):
-    self.canvas.delete("hangman")
+    # self.canvas.delete("hangman") # This no longer works and I can't find a clear answer as to why
+    self.canvas.delete("freehangman")
+    self.canvas.itemconfig("head", state="hidden")
+    self.canvas.itemconfig("torso", state="hidden")
+    self.canvas.itemconfig("pants", state="hidden")
+    self.canvas.itemconfig("limbs", state="hidden")
+    self.canvas.itemconfig("face", state="hidden")
 
   def Restart_Displays(self, *args, **kwargs):
     self.solution_display_message.set(self.obscured_display)
@@ -405,16 +418,8 @@ class Game(tk.Tk):
     exit()
 
 # -------------------------------------------------------------------------------------------
-# Testing Methods
+# Execution and Mainloop
 # -------------------------------------------------------------------------------------------
-  def How_Many_Words(self, *args, **kwargs):
-    self.display_message.set(str(len(self.word_list)))
-
-# -------------------------------------------------------------------------------------------
-# Actual Execution of App
-# -------------------------------------------------------------------------------------------
-
-
 
 app = Game()
 app.Make_Game()
