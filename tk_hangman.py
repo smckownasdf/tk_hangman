@@ -3,16 +3,14 @@ from random import choice
 from sys import exit
 
 # TO-DO
+# Bind sun, just for fun, with a click that will change message window message or animate face on sun
 # prevent rapid input so that hangman will always appear properly (possibly asyncio? figure out how to make it work with tkinter, possibly as coroutine)
 # maybe add better comments
 # maybe make resizable
 
 # DONE (this commit)
-# Removed unused Draw_Mountains method
-# Removed unnecessarily inherited variables from Wrong_Answer and Draw_Hangman methods
-# Attempted to resolve hangman not appearing issue by animating him beforehand and toggling state between hidden and normal
-# That did not work, and created an odd bug where I could no longer delete him based on the "hangman" tag
-# Resolved that new issue by toggling him back to hidden instead of reverting back
+# Added togglable sun face
+# Attempted to do the same thing with the clouds, but hidden objects can't be clicked so that was dumb.
 
 class Game(tk.Tk):
   def __init__(self, *args, **kwargs):
@@ -24,10 +22,13 @@ class Game(tk.Tk):
     # UI variables for broad scope of accessibility
     self.canvas = None
     self.reset_button = None
+    self.face_hidden_check = None
+    self.left_cloud_hidden_check = None
+    self.right_cloud_hidden_check = None
     self.display_message = tk.StringVar()
     self.solution_display_message = tk.StringVar()
     self.buttons = []
-    # Gameplay variables
+    # Gameplay variable initialization
     self.letter_list = [letter for letter in "abcdefghijklmnopqrstuvwxyz"]
     self.word_list = None
     self.backup_word_list = ["pencil", "basket", "syzygy", "porcupine", "crawfish", "banana", "tumbleweed", "python", "gerrymander"]
@@ -50,6 +51,7 @@ class Game(tk.Tk):
     self.Draw_Gallows()
     self.Draw_Rope()
     self.Draw_Hidden_Hangman()
+    self.Draw_Sun_Face()
 
   def Create_Main_Container(self, *args, **kwargs): # primary field / container for whole game display
     self.main_container.grid(rowspan=10, columnspan=10)
@@ -122,17 +124,6 @@ class Game(tk.Tk):
       s_button, t_button, u_button, v_button, w_button, x_button, y_button, z_button))  # add all buttons to buttons list for easy access in resetting the game
     self.Bind_Buttons()
 
-  def Create_Displays(self, *args, **kwargs):
-    solution_display = tk.Message(self.button_container, aspect=1000, textvariable=self.solution_display_message)
-    solution_display.grid(row=7, column=1, columnspan=10)
-    solution_display.config(bg="lightblue", font=('helvetica', 20), pady=20, padx=50, relief="ridge")
-
-    self.display_message = tk.StringVar()
-    message_display = tk.Message(self.button_container, aspect=1000, textvariable=self.display_message)
-    message_display.grid(row=8, column=1, columnspan=10)
-    message_display.config(bg="lightblue", font=('helvetica', 20), pady=20, padx=50, relief="ridge")
-    self.Start_Displays()
-
   def Bind_Buttons(self, *args, **kwargs):
     # I hate using index numbers instead of names, but why use a dictionary just to make this look nicer?
     try:
@@ -166,6 +157,17 @@ class Game(tk.Tk):
       print("Buttons list variable is missing an index, 0 to 25")
       print("Playing with no or limited keyboard input for letters")
       print("Error: ", err)
+
+  def Create_Displays(self, *args, **kwargs):
+    solution_display = tk.Message(self.button_container, aspect=1000, textvariable=self.solution_display_message)
+    solution_display.grid(row=7, column=1, columnspan=10)
+    solution_display.config(bg="lightblue", font=('helvetica', 20), pady=20, padx=50, relief="ridge")
+
+    self.display_message = tk.StringVar()
+    message_display = tk.Message(self.button_container, aspect=1000, textvariable=self.display_message)
+    message_display.grid(row=8, column=1, columnspan=10)
+    message_display.config(bg="lightblue", font=('helvetica', 20), pady=20, padx=50, relief="ridge")
+    self.Start_Displays()
 
   def Create_Word_List(self, *args, **kwargs):
     # Thank you, https://github.com/dolph/dictionary/find/master for this file
@@ -294,6 +296,23 @@ class Game(tk.Tk):
     for letter in self.letter_list:
       self.unbind(letter)
 
+  def Toggle_Sun_Face(self, *args, **kwargs):
+    if self.canvas.itemcget(self.face_hidden_check, "state") == "hidden":
+      self.canvas.itemconfig("sunface", state="normal")
+    elif self.canvas.itemcget(self.face_hidden_check, "state") == "normal":
+      self.canvas.itemconfig("sunface", state="hidden")
+
+  def Toggle_Right_Cloud(self, *args, **kwargs):
+    if self.canvas.itemcget(self.right_cloud_hidden_check, "state") == "hidden":
+      self.canvas.itemconfig("rightcloud", state="normal")
+    elif self.canvas.itemcget(self.right_cloud_hidden_check, "state") == "normal":
+      self.canvas.itemconfig("rightcloud", state="hidden")
+
+  def Toggle_Left_Cloud(self, *args, **kwargs):
+    if self.canvas.itemcget(self.left_cloud_hidden_check, "state") == "hidden":
+      self.canvas.itemconfig("leftcloud", state="normal")
+    elif self.canvas.itemcget(self.left_cloud_hidden_check, "state") == "normal":
+      self.canvas.itemconfig("leftcloud", state="hidden")
 # -------------------------------------------------------------------------------------------
 # Animation Methods
 # -------------------------------------------------------------------------------------------
@@ -328,17 +347,31 @@ class Game(tk.Tk):
     self.canvas.create_line(245,75,255,74, tags="setting") # rope detail
 
   def Draw_Sun(self, *args, **kwargs):
-    self.canvas.create_oval(50, 50, 125, 125, fill="goldenrod", tags="setting") # Mr. Sun
+    sun = self.canvas.create_oval(50, 50, 125, 125, fill="goldenrod", tags="setting") # Mr. Sun
+    self.canvas.tag_bind(sun, '<Button-1>', self.Toggle_Sun_Face)
+
+  def Draw_Sun_Face(self, *args, **kwargs):
+    self.face_hidden_check = self.canvas.create_oval(70,75, 85,87, fill="black", tags="sunface", state="hidden") # left lens create_oval
+    self.canvas.create_polygon(70,81, 70,75, 86,75, 86,81, fill="black", tags="sunface", state="hidden") # left lens rectangle
+    self.canvas.create_oval(110,75, 95,87, fill="black", tags="sunface", state="hidden") # right lens oval
+    self.canvas.create_polygon(111,81, 111,75, 95,75, 95,81, fill="black", tags="sunface", state="hidden") # right lens rectangle
+    self.canvas.create_line(70,75, 110,75, tags="sunface", state="hidden") # upper bridge
+    self.canvas.create_line(88,78, 93,78, tags="sunface", state="hidden") # lower bridge mid
+    self.canvas.create_line(88,78, 86,80, tags="sunface", state="hidden") # lower bridge left
+    self.canvas.create_line(93,78, 95,80, tags="sunface", state="hidden") # lower bridge right
+    self.canvas.create_arc(70,90, 110,110, style="arc", extent=-180, width=2, tags="sunface", state="hidden")
 
   def Draw_Clouds(self, *args, **kwargs):
-    self.canvas.create_oval(330, 38, 380, 54, fill="white", outline="white", tags="setting") # cloud (left)
-    self.canvas.create_oval(360, 23, 420, 60, fill="white", outline="white", tags="setting") # cloud (left)
-    self.canvas.create_oval(320, 30, 380, 50, fill="white", outline="white", tags="setting") # cloud (left)
-    self.canvas.create_oval(380, 30, 460, 50, fill="white", outline="white", tags="setting") # cloud (left)
-    self.canvas.create_oval(30, 138, 80, 154, fill="white", outline="white", tags="setting") # cloud (right)
-    self.canvas.create_oval(60, 123, 120, 160, fill="white", outline="white", tags="setting") # cloud (right)
-    self.canvas.create_oval(20, 140, 80, 150, fill="white", outline="white", tags="setting") # cloud (right)
-    self.canvas.create_oval(80, 130, 160, 150, fill="white", outline="white", tags="setting") # cloud (right)
+    self.left_cloud_hidden_check = self.canvas.create_oval(330, 38, 380, 54, fill="white", outline="white", tags="leftcloud", state="normal") # cloud (left)
+    self.canvas.create_oval(360, 23, 420, 60, fill="white", outline="white", tags="leftcloud", state="normal") # cloud (left)
+    self.canvas.create_oval(320, 30, 380, 50, fill="white", outline="white", tags="leftcloud", state="normal") # cloud (left)
+    self.canvas.create_oval(380, 30, 460, 50, fill="white", outline="white", tags="leftcloud", state="normal") # cloud (left)
+    self.right_cloud_hidden_check = self.canvas.create_oval(30, 138, 80, 154, fill="white", outline="white", tags="rightcloud", state="normal") # cloud (right)
+    self.canvas.create_oval(60, 123, 120, 160, fill="white", outline="white", tags="rightcloud", state="normal") # cloud (right)
+    self.canvas.create_oval(20, 140, 80, 150, fill="white", outline="white", tags="rightcloud", state="normal") # cloud (right)
+    self.canvas.create_oval(80, 130, 160, 150, fill="white", outline="white", tags="rightcloud", state="normal") # cloud (right)
+    self.canvas.tag_bind("rightcloud", '<Button-1>', self.Toggle_Right_Cloud)
+    self.canvas.tag_bind("leftcloud", '<Button-1>', self.Toggle_Left_Cloud)
 
   def Draw_Hidden_Hangman(self, *args, **kwargs):
     self.canvas.create_oval(220,102, 280, 162, fill="blanched almond", tags="hangman, head", state="hidden") # Draw Head
