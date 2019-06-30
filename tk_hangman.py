@@ -3,7 +3,7 @@ from random import choice
 from sys import exit
 
 # TO-DO
-# Bind sun, just for fun, with a click that will change message window message or animate face on sun
+# make it so you can toggle clouds back into scenery
 # prevent rapid input so that hangman will always appear properly (possibly asyncio? figure out how to make it work with tkinter, possibly as coroutine)
 # maybe add better comments
 # maybe make resizable
@@ -25,6 +25,7 @@ class Game(tk.Tk):
     self.face_hidden_check = None
     self.left_cloud_hidden_check = None
     self.right_cloud_hidden_check = None
+    self.cloud_button = None
     self.display_message = tk.StringVar()
     self.solution_display_message = tk.StringVar()
     self.buttons = []
@@ -303,16 +304,28 @@ class Game(tk.Tk):
       self.canvas.itemconfig("sunface", state="hidden")
 
   def Toggle_Right_Cloud(self, *args, **kwargs):
-    if self.canvas.itemcget(self.right_cloud_hidden_check, "state") == "hidden":
-      self.canvas.itemconfig("rightcloud", state="normal")
-    elif self.canvas.itemcget(self.right_cloud_hidden_check, "state") == "normal":
+    if self.canvas.itemcget(self.right_cloud_hidden_check, "state") == "normal":
       self.canvas.itemconfig("rightcloud", state="hidden")
+    self.Clouds_Button_Appearance()
 
   def Toggle_Left_Cloud(self, *args, **kwargs):
-    if self.canvas.itemcget(self.left_cloud_hidden_check, "state") == "hidden":
-      self.canvas.itemconfig("leftcloud", state="normal")
-    elif self.canvas.itemcget(self.left_cloud_hidden_check, "state") == "normal":
+    if self.canvas.itemcget(self.left_cloud_hidden_check, "state") == "normal":
       self.canvas.itemconfig("leftcloud", state="hidden")
+    self.Clouds_Button_Appearance()
+
+  def Clouds_Button_Appearance(self, *args, **kwargs):
+    if self.canvas.itemcget(self.left_cloud_hidden_check, "state") == "hidden" and self.canvas.itemcget(self.right_cloud_hidden_check, "state") == "hidden":
+      if self.cloud_button == None:
+        self.cloud_button = tk.Button(self.button_container, text="I <3 Clouds", command=self.Bring_Clouds_Back)
+      self.cloud_button.grid(row=7, column=9, columnspan=2, padx=2, pady=2, ipadx=5, sticky="NESW")
+    else:
+      pass
+
+  def Bring_Clouds_Back(self, *args, **kwargs):
+    self.canvas.itemconfig("leftcloud", state="normal")
+    self.canvas.itemconfig("rightcloud", state="normal")
+    self.cloud_button.grid_forget()
+    
 # -------------------------------------------------------------------------------------------
 # Animation Methods
 # -------------------------------------------------------------------------------------------

@@ -11,3 +11,5 @@ https://stackoverflow.com/questions/13326940/python-tkinter-how-to-bind-key-to-a
 - Using .after() instead of importing time.sleep()
 - Using unbind() to disable input
 - An introduction to different means of achieving concurrency within Python3, even if I ran into issues while attempting to use Thread.threading() with TKinter
+-itemconfig, itemcget methods to modify groups of items using tags or other attributes
+-tag_bind to bind entire groups of items simultaneously to UI actions
